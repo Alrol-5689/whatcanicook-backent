@@ -1,7 +1,7 @@
 package com.whatcanicook.service;
 
 import com.whatcanicook.dto.LoginRequest;
-import com.whatcanicook.dto.LoginResponse;
+import com.whatcanicook.dto.AuthResponse;
 import com.whatcanicook.dto.RegisterRequest;
 import com.whatcanicook.model.User;
 import com.whatcanicook.repository.UserRepository;
@@ -19,12 +19,22 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public LoginResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new LoginResponse(false, "El email ya está registrado");
+            return new AuthResponse(
+                    false,
+                    "El email ya está registrado",
+                    null,
+                    null
+            );
         }
         if (userRepository.existsByUsername(request.getUsername())) {
-            return new LoginResponse(false, "El username está en uso");
+            return new AuthResponse(
+                    false,
+                    "El username está en uso",
+                    null,
+                    null
+            );
         }
 
         User user = User.builder()
@@ -35,13 +45,27 @@ public class AuthService {
 
         userRepository.save(user);
 
-        return new LoginResponse(true, "Usuario registrado correctamente");
+        return new AuthResponse(
+                true,
+                "Usuario registrado correctamente",
+                user.getUsername(),
+                user.getEmail()
+        );
     }
 
-    public LoginResponse login(LoginRequest request) {
-        return userRepository.findByEmail(request.getEmail())
+    public AuthResponse login(LoginRequest request) {
+        return userRepository
+                .findByEmail(request.getEmail())
                 .filter(user -> passwordEncoder.matches(request.getPassword(), user.getPassword()))
-                .map(user -> new LoginResponse(true, "Login correcto"))
-                .orElse(new LoginResponse(false, "Credenciales incorrectas"));
+                .map(user -> new AuthResponse(
+                        true,
+                        "Login correcto",
+                        user.getUsername(),
+                        user.getEmail()))
+                .orElse(new AuthResponse(
+                        false,
+                        "Credenciales incorrectas",
+                        null,
+                        null));
     }
 }
